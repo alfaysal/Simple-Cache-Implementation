@@ -4,11 +4,13 @@ require 'vendor/autoload.php';
 
 use CacheImplementation\ArrayCache;
 
+$interval = DateInterval::createFromDateString('5 sec');
+
 $cache = new ArrayCache();
 // $cache->clear();
-$cache->set("first_key", "first_value", 5);
-$cache->set("second_key", "second_value", 5);
-sleep(9);
+$cache->set("first_key", "first_value", $interval);
+$cache->set("second_key", "second_value", $interval);
+sleep(6);
 // $cache->delete("sec.nd_key");
 // $cache->delete("first_key");
 var_dump($cache->get('first_key'));

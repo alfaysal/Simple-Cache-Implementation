@@ -1,21 +1,18 @@
 <?php
 
-namespace CacheImplementation\DTO;
+namespace CacheImplementation;
 
 use CacheImplementation\InvalidCacheArgumentsException;
 use CacheImplementation\CacheException;
 
 
-class ItemDTO {
+class Item {
     public string $valid_char_for_keys = "a-z,A-Z,.,_";
     public int $key_length = 64;
     public string $key_type;
     public string $cache_meta_key_name = 'key';
     public string $cache_meta_value_name = 'value';
     public string $cache_meta_expiration_name = 'expiration';
-    public string $key;
-    public string $value;
-    public string $expiration;
 
     public function validateKey($key) : void {
         if (empty($key)) {

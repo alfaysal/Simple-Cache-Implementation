@@ -5,15 +5,15 @@ namespace CacheImplementation;
 use Psr\SimpleCache\CacheInterface;
 use CacheImplementation\InvalidCacheArgumentsException;
 use CacheImplementation\CacheException;
-use CacheImplementation\DTO\ItemDTO;
+use CacheImplementation\Item;
 
 final class ArrayCache implements CacheInterface {
 
-    private ItemDTO $item;
+    private Item $item;
     private array $cache_dictionary = [];
 
     public function __construct() {
-        $this->item = new ItemDTO();
+        $this->item = new Item();
     }
 
     public function get(string $key, mixed $default = null): mixed {
