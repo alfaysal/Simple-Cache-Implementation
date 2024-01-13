@@ -4,9 +4,9 @@ require 'vendor/autoload.php';
 
 use CacheImplementation\ArrayCache;
 
-$interval = DateInterval::createFromDateString('5 sec');
+$interval = DateInterval::createFromDateString('10 sec');
 
-$cache = new ArrayCache();
+$cache = ArrayCache::getInstance();
 // $cache->clear();
 $cache->set("first_key", "first_value", $interval);
 $cache->set("second_key", "second_value", $interval);
