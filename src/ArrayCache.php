@@ -3,23 +3,18 @@
 namespace CacheImplementation;
 
 use Psr\SimpleCache\CacheInterface;
-use CacheImplementation\InvalidCacheArguments;
+use CacheImplementation\InvalidCacheArgumentsException;
 use CacheImplementation\CacheException;
-use Psr\SimpleCache\InvalidArgumentException;
+use CacheImplementation\DTO\ItemDTO;
 
 final class ArrayCache implements CacheInterface {
 
+    private ItemDTO $item;
     private array $cache_dictionary = [];
 
-    private string $valid_char_for_keys = "a-z,A-Z,.,_";
-
-    private string $key_type;
-    
-    private int $key_length = 64;
-
-    private string $cache_meta_key_name = 'key';
-    private string $cache_meta_value_name = 'value';
-    private string $cache_meta_expiration_name = 'expiration';
+    public function __construct() {
+        $this->item = new ItemDTO();
+    }
 
     /**
      * Fetches a value from the cache.
@@ -33,7 +28,7 @@ final class ArrayCache implements CacheInterface {
      *   MUST be thrown if the $key string is not a legal value.
      */
     public function get(string $key, mixed $default = null): mixed {
-        $this->validateKey($key);
+        $this->item->validateKey($key);
 
         return array_key_exists($key, $this->cache_dictionary) ? $this->getCacheItemValue($key) : $default;
     }
@@ -54,13 +49,13 @@ final class ArrayCache implements CacheInterface {
      */
     public function set(string $key, mixed $value = null, null|int|\DateInterval $ttl = null): bool {
         
-        $this->validateKey($key);
-        $time = $this->getTTL($ttl);
+        $this->item->validateKey($key);
+        $time = $this->item->getTTL($ttl);
 
         $this->save([
-            $this->cache_meta_key_name => $key,
-            $this->cache_meta_value_name => $value,
-            $this->cache_meta_expiration_name => $time
+            $this->item->cache_meta_key_name => $key,
+            $this->item->cache_meta_value_name => $value,
+            $this->item->cache_meta_expiration_name => $time
         ]);
 
         return true;
@@ -77,7 +72,7 @@ final class ArrayCache implements CacheInterface {
      *   MUST be thrown if the $key string is not a legal value.
      */
     public function delete(string $key): bool {
-        $this->validateKey($key);
+        $this->item->validateKey($key);
 
         if (array_key_exists($key, $this->cache_dictionary)) {
             unset($this->cache_dictionary[$key]);
@@ -113,16 +108,16 @@ final class ArrayCache implements CacheInterface {
      *   or if any of the $keys are not a legal value.
      */
     public function getMultiple(iterable $keys, mixed $default = null): iterable {
-        $this->iterableValidate($keys);
+        $this->item->iterableValidate($keys);
 
         $results = [];
 
         foreach($keys as $key) {
-            $this->validateKey($key);
+            $this->item->validateKey($key);
             if (! array_key_exists($key, $this->cache_dictionary)) {
-                throw new InvalidCacheArguments("your key is not found in cache");
+                throw new InvalidCacheArgumentsException("your key is not found in cache");
             }
-            
+
             $results[$key] = $this->getCacheItemValue($key);
         }
 
@@ -144,16 +139,16 @@ final class ArrayCache implements CacheInterface {
      *   or if any of the $values are not a legal value.
      */
     public function setMultiple(iterable $values, null|int|\DateInterval $ttl = null): bool {
-        $this->iterableValidate($values);
+        $this->item->iterableValidate($values);
 
-        $time = $this->getTTl($ttl);
+        $time = $this->item->getTTl($ttl);
 
         foreach($values as $key => $value) {
-            $this->validateKey($key);
+            $this->item->validateKey($key);
             $this->save([
-                $this->cache_meta_key_name => $key,
-                $this->cache_meta_value_name => $value,
-                $this->cache_meta_expiration_name => $time
+                $this->item->cache_meta_key_name => $key,
+                $this->item->cache_meta_value_name => $value,
+                $this->item->cache_meta_expiration_name => $time
             ]);
         }
 
@@ -172,7 +167,7 @@ final class ArrayCache implements CacheInterface {
      *   or if any of the $keys are not a legal value.
      */
     public function deleteMultiple(iterable $keys): bool {
-        $this->iterableValidate($keys);
+        $this->item->iterableValidate($keys);
 
         if (empty($this->cache_dictionary)) {
 
@@ -180,7 +175,7 @@ final class ArrayCache implements CacheInterface {
         }
 
         foreach($this->cache_dictionary as $key => $value) {
-            $this->validateKey($key);
+            $this->item->validateKey($key);
 
             if (! array_key_exists($key, $this->cache_dictionary)) {
                 throw new CacheException("Cache key is not exist. Given key {$key}");
@@ -208,42 +203,14 @@ final class ArrayCache implements CacheInterface {
      *   MUST be thrown if the $key string is not a legal value.
      */
     public function has(string $key): bool {
-        $this->validateKey($key);
+        $this->item->validateKey($key);
 
         return array_key_exists($key, $this->cache_dictionary);
     }
 
-    private function validateKey($key) : void {
-        if (empty($key)) {
-            throw new InvalidCacheArguments("Cache key can not be empty");
-        }
-
-        $this->key_type = gettype($key);
-
-        if (! $this->key_type  == "string") {
-            throw new InvalidCacheArguments("Cache key must be string. {$this->key_type} given");
-        }
-
-        if (preg_match("/[^a-zA-Z\._]/", $key)) {
-            throw new InvalidCacheArguments("Cache key is not valid. Key must contain character {$this->valid_char_for_keys} given"); 
-        }
-
-        if (strlen($key) > $this->key_length ) {
-            throw new InvalidCacheArguments("Cache key length should be smaller than {$this->key_length}"); 
-        }
-    }
-
-    private function iterableValidate($values) : void {
-        $get_value_type = gettype($values);
-
-        if (! is_iterable($values)) {
-            throw new CacheException("Value is not iterable type. {$get_value_type}");
-        }
-    }
-
     private function getCacheItemValue($key) {
-        $expiration_time = $this->cache_dictionary[$key][$this->cache_meta_expiration_name];
-        $value = $this->cache_dictionary[$key][$this->cache_meta_value_name];
+        $expiration_time = $this->cache_dictionary[$key][$this->item->cache_meta_expiration_name];
+        $value = $this->cache_dictionary[$key][$this->item->cache_meta_value_name];
 
         if (is_null($expiration_time)) {
 
@@ -260,27 +227,10 @@ final class ArrayCache implements CacheInterface {
 
     private function save(array $item) { 
 
-        $this->cache_dictionary[$item[$this->cache_meta_key_name]] = [
-            $this->cache_meta_value_name => $item[$this->cache_meta_value_name],
-            $this->cache_meta_expiration_name => $item[$this->cache_meta_expiration_name]
+        $this->cache_dictionary[$item[$this->item->cache_meta_key_name]] = [
+            $this->item->cache_meta_value_name => $item[$this->item->cache_meta_value_name],
+            $this->item->cache_meta_expiration_name => $item[$this->item->cache_meta_expiration_name]
         ];
-    }
-
-    private function getTTl($ttl) {
-
-        if (is_null($ttl)) {
-            return $ttl;
-        }
-
-        if ($ttl instanceof \DateInterval) {
-            $time = time() + date_create('@0')->add($ttl)->getTimestamp();
-        } elseif (is_numeric($ttl)) {
-            $time = time() + $ttl;
-        } else {
-            throw new InvalidCacheArguments("ttl value is not valid. Expected value (null|int|\DateInterval)");
-        }
-
-        return $time;
     }
 
 }
