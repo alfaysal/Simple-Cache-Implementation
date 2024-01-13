@@ -17,16 +17,6 @@ class ItemDTO {
     public string $value;
     public string $expiration;
 
-    public function getValidKeyChar($key) : string {
-
-        return $this->valid_char_for_keys;
-    }
-
-    public function getKeyLength($key) : string {
-
-        return $this->key_length;
-    }
-
     public function validateKey($key) : void {
         if (empty($key)) {
             throw new InvalidCacheArgumentsException("Cache key can not be empty");
@@ -34,7 +24,7 @@ class ItemDTO {
 
         $this->key_type = gettype($key);
 
-        if (! $this->key_type  == "string") {
+        if (! $this->key_type  === "string") {
             throw new InvalidCacheArgumentsException("Cache key must be string. {$this->key_type} given");
         }
 
@@ -71,22 +61,5 @@ class ItemDTO {
             throw new CacheException("Value is not iterable type. {$get_value_type}");
         }
     }
-
-    // public function getCacheItemValue($key) {
-    //     $expiration_time = $this->cache_dictionary[$key][$this->cache_meta_expiration_name];
-    //     $value = $this->cache_dictionary[$key][$this->cache_meta_value_name];
-
-    //     if (is_null($expiration_time)) {
-
-    //         return $value;
-    //     }
-
-    //     if (time() <= $expiration_time) {
-
-    //         return $value;
-    //     }
-        
-    //     return null;
-    // }
     
 }
